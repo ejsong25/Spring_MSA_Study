@@ -1,6 +1,7 @@
 package com.inflearn.userservice.controller;
 
 import com.inflearn.userservice.dto.UserDTO;
+import com.inflearn.userservice.jpa.UserEntity;
 import com.inflearn.userservice.service.UserService;
 import com.inflearn.userservice.vo.Greeting;
 import com.inflearn.userservice.vo.RequestUser;
@@ -13,8 +14,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @RestController
-@RequestMapping("/")
+@RequestMapping("/user-service")
 public class UserController {
     private UserService userService;
 
@@ -32,14 +36,17 @@ public class UserController {
 
     @GetMapping("/health_check")
     public String status(){
-        return "It's working in User Service";
+        return String.format("It's working in User Service on PORT %s",
+                env.getProperty("local.server.port"));
     }
+    
     @GetMapping("/welcome")
     public String welcome(){
 //        return env.getProperty("greeting.message");
         return greeting.getMessage();
     }
 
+    //회원가입
     @PostMapping("/users")
     public ResponseEntity<ResponseUser> createUser(@RequestBody RequestUser user){
         ModelMapper mapper = new ModelMapper();
@@ -51,5 +58,28 @@ public class UserController {
         //반환코드 201번 성공코드 + 메세지
         ResponseUser responseUser = mapper.map(userDto, ResponseUser.class);
         return ResponseEntity.status(HttpStatus.CREATED).body(responseUser);
+    }
+
+    //전체 회원 조회
+    @GetMapping("/users")
+    public ResponseEntity<List<ResponseUser>> getUsers(){
+        Iterable<UserEntity> userList = userService.getUserByAll();
+
+        List<ResponseUser> result = new ArrayList<>();
+        userList.forEach(v -> {
+            result.add(new ModelMapper().map(v, ResponseUser.class));
+        });
+
+        return ResponseEntity.status(HttpStatus.OK).body(result);
+    }
+
+    //
+    @GetMapping("/users/{userId}")
+    public ResponseEntity<ResponseUser> getUser(@PathVariable("userId") String userId){
+        UserDTO userDTO = userService.getUserByUserId(userId);
+
+        ResponseUser returnValue = new ModelMapper().map(userDTO, ResponseUser.class);
+
+        return ResponseEntity.status(HttpStatus.OK).body(returnValue);
     }
 }

@@ -20,6 +20,46 @@ spring:
             preLogger: true
             postLogger: true
       routes:
+#        - id: user-service
+#          uri: lb://USER-SERVICE # Eureka에 등록된 application name
+#          predicates:
+#             - Path=/user-service/**
+        - id: user-service
+          uri: lb://USER-SERVICE 
+          predicates:
+             - Path=/user-service/login
+             - Method=POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/user-service/(?<segment>.*), /$\{segment} 
+              # prefix 제거 - 전자에서 후자로 변환
+
+        - id: user-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/user-service/users
+            - Method=POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/user-service/(?<segment>.*), /$\{segment}
+
+        - id: user-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/user-service/**
+            - Method=GET
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/user-service/(?<segment>.*), /$\{segment}
+            - AuthorizationHeaderFilter
+        - id: order-service
+          uri: lb://ORDER-SERVICE # Eureka에 등록된 application name
+          predicates:
+            - Path=/order-service/**
+        - id: catalog-service
+          uri: lb://CATALOG-SERVICE # Eureka에 등록된 application name
+          predicates:
+            - Path=/catalog-service/**
         - id: first-service
           uri: lb://FIRST-SERVICE
           predicates:
@@ -41,3 +81,6 @@ spring:
                 baseMessage: Hi, there
                 preLogger: true
                 postLogger: true
+token:
+  expiration_time: 86400000
+  secret: user_token
